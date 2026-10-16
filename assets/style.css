@@ -2,3 +2,98 @@
 @media(max-width:1250px){.video-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.watch-layout{grid-template-columns:minmax(0,1fr) 300px;gap:18px}.sidebar{width:200px}.main-content,.watch-layout{margin-left:200px}}
 @media(max-width:900px){.sidebar{width:72px;padding:14px 8px}.side-link{justify-content:center;padding:13px 8px;font-size:0}.side-link>span{font-size:21px}.sidebar-caption,.sidebar-note,.sidebar-divider{display:none}.main-content,.watch-layout{margin-left:72px}.main-content{padding:18px}.watch-layout{grid-template-columns:minmax(0,1fr);padding:20px}.related-section{margin-top:15px}.related-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.admin-columns{grid-template-columns:1fr}}
 @media(max-width:600px){.topbar{height:58px;padding:0 12px;gap:10px}.brand{font-size:18px;gap:7px}.brand-mark{width:28px;height:21px}.topbar .icon-button{width:28px}.searchbar{width:auto;flex:1;height:37px}.searchbar input{font-size:13px;padding:0 10px}.searchbar button{width:38px;font-size:22px}.admin-link{padding:8px;font-size:13px}.admin-link span{display:none}.sidebar{top:58px;width:56px}.main-content{margin-left:56px;padding:15px 12px 30px}.video-grid{grid-template-columns:1fr;gap:26px}.thumbnail-wrap{border-radius:9px}.video-card-details{padding-top:10px}.section-heading h1{font-size:19px}.chips{padding-bottom:18px}.watch-layout{margin-left:0;padding:12px}.watch-main{min-width:0}.player-shell{border-radius:0;margin:0 -12px;width:calc(100% + 24px)}.watch-title-row h1{font-size:18px}.related-list{grid-template-columns:1fr}.admin-container{padding:25px 14px 50px}.admin-heading{align-items:flex-start}.admin-heading h1{font-size:27px}.secure-pill{font-size:10px;padding:8px}.panel{padding:17px}.panel-heading{align-items:flex-start;flex-direction:column}.panel-heading h2{margin-bottom:0}.admin-video-row{grid-template-columns:85px minmax(0,1fr)}.admin-video-row img{width:85px}.login-panel{padding:20px}.admin-help{padding:16px}}
+
+/* PERBAIKAN PEMUTAR VIDEO PORTRAIT DAN FULLSCREEN */
+.watch-main .player-shell {
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background: #000;
+  border-radius: 12px;
+}
+
+.watch-main .player-shell .video-player {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 75vh;
+  aspect-ratio: auto;
+  object-fit: contain;
+  background: #000;
+}
+
+/* Video landscape */
+.watch-main .player-shell:not(.is-portrait) .video-player {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+/* Video portrait */
+.watch-main .player-shell.is-portrait {
+  aspect-ratio: auto;
+}
+
+.watch-main .player-shell.is-portrait .video-player {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+/* Fullscreen */
+.watch-main .player-shell:fullscreen {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+  background: #000;
+}
+
+.watch-main .player-shell:fullscreen .video-player {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+.watch-main .player-shell:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.watch-main .player-shell:-webkit-full-screen .video-player {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 600px) {
+  .watch-main .player-shell {
+    width: 100%;
+    margin: 0;
+    border-radius: 8px;
+  }
+
+  .watch-main .player-shell .video-player {
+    max-height: 75vh;
+  }
+
+  .watch-main .player-shell.is-portrait .video-player {
+    max-height: 75vh;
+  }
+}
