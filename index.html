@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f0f0f"><meta name="description" content="VideoKu — tonton video favoritmu.">
+  <title>VideoKu — Tonton video</title><link rel="icon" href="assets/logo.svg"><link rel="stylesheet" href="assets/style.css">
+  <script defer src="assets/config.js"></script><script defer src="assets/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-button" id="menuToggle" aria-label="Buka menu"><span class="hamburger">☰</span></button>
+    <a class="brand" href="index.html" aria-label="VideoKu beranda"><span class="brand-mark">▶</span><span>VideoKu</span></a>
+    <form class="searchbar" id="searchForm" role="search"><input id="searchInput" type="search" placeholder="Telusuri video" aria-label="Telusuri video"><button aria-label="Cari" type="submit">⌕</button></form>
+    <a class="admin-link" href="admin.html" title="Halaman admin">⚙ <span>Admin</span></a>
+  </header>
+  <aside class="sidebar" id="sidebar">
+    <a class="side-link active" href="index.html"><span>⌂</span> Beranda</a>
+    <button class="side-link" data-filter="Terbaru"><span>◷</span> Terbaru</button>
+    <button class="side-link" data-filter="Populer"><span>▣</span> Pilihan</button>
+    <div class="sidebar-divider"></div><p class="sidebar-caption">VideoKu</p>
+    <p class="sidebar-note">Temukan dan tonton video dari koleksi kami.</p>
+  </aside>
+  <main class="main-content" id="mainContent">
+    <nav class="chips" aria-label="Kategori" id="categoryChips"><button class="chip selected" data-category="Semua">Semua</button></nav>
+    <section class="section-heading"><h1>Video untuk kamu</h1><span id="videoCount" class="muted"></span></section>
+    <div id="videoGrid" class="video-grid" aria-live="polite"><div class="loading-state">Memuat video…</div></div>
+    <div id="emptyState" class="empty-state hidden"><div class="empty-icon">⌕</div><h2>Video tidak ditemukan</h2><p>Coba kata kunci atau kategori lain.</p><button class="primary-button" id="clearSearch">Tampilkan semua video</button></div>
+    <footer class="site-footer">VideoKu · Dibuat dengan GitHub Pages</footer>
+  </main>
+</body>
+</html>
