@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "25be7c28-166e-41db-8e7f-210b70eb7456",
+    "title": "Video Percobaan VideoKu",
+    "description": "",
+    "thumbnail": "https://placehold.co/640x360/272727/ffffff?text=VideoKu",
+    "videoUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    "category": "hiburan",
+    "views": 0,
+    "createdAt": "2026-10-16T13:25:02.893Z"
+  }
+]
