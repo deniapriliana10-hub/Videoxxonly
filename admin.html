@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="id">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0f0f0f"><title>Admin — VideoKu</title><link rel="icon" href="assets/logo.svg"><link rel="stylesheet" href="assets/style.css"><script defer src="assets/config.js"></script><script defer src="assets/admin.js"></script></head>
+<body class="admin-page"><header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">▶</span><span>VideoKu</span></a><div class="topbar-spacer"></div><a class="admin-link" href="index.html">← Lihat website</a></header>
+<main class="admin-container"><div class="admin-heading"><div><p class="eyebrow">PANEL PENGELOLAAN</p><h1>Admin VideoKu</h1><p class="muted">Tambahkan video baru menggunakan URL CDN MP4.</p></div><span class="secure-pill">♧ Terlindungi</span></div>
+<div id="notice" class="notice hidden" role="status"></div>
+<section id="loginPanel" class="panel login-panel"><h2>Masuk sebagai admin</h2><p class="muted">Gunakan kata sandi admin yang kamu atur di Cloudflare Worker.</p><form id="loginForm" class="form-stack"><label>Kata sandi admin<input id="adminPassword" type="password" autocomplete="current-password" required minlength="1" placeholder="Masukkan kata sandi"></label><button class="primary-button" type="submit">Masuk</button></form><p class="fine-print">Jangan masukkan token GitHub di halaman ini. Token GitHub hanya disimpan sebagai secret di Cloudflare.</p></section>
+<section id="dashboardPanel" class="hidden"><div class="admin-columns"><section class="panel"><div class="panel-heading"><h2>Tambah video</h2><span class="muted">Semua kolom bertanda * wajib</span></div><form id="videoForm" class="form-stack">
+<label>Judul video *<input name="title" maxlength="120" required placeholder="Contoh: Jalan-jalan ke Pangandaran"></label>
+<label>URL video CDN MP4 *<input name="videoUrl" type="url" required placeholder="https://cdn.example.com/video.mp4"><small>Gunakan URL HTTPS langsung ke file MP4 yang dapat diakses publik.</small></label>
+<label>URL thumbnail *<input name="thumbnail" type="url" required placeholder="https://cdn.example.com/thumbnail.jpg"><small>Gambar pratinjau video, gunakan URL HTTPS.</small></label>
+<label>Kategori *<input name="category" maxlength="40" required placeholder="Contoh: Hiburan"></label>
+<label>Deskripsi<textarea name="description" rows="5" maxlength="3000" placeholder="Ceritakan isi video…"></textarea></label>
+<button class="primary-button" type="submit" id="saveVideoButton">Simpan video ke GitHub</button></form></section>
+<section class="panel"><div class="panel-heading"><h2>Video tersimpan</h2><button id="refreshVideos" class="secondary-button" type="button">↻ Muat ulang</button></div><p class="muted small-text">Daftar ini dibaca dari file data/videos.json pada repositori.</p><div id="adminVideoList" class="admin-video-list"><p class="muted">Memuat data…</p></div><button id="logoutButton" class="secondary-button logout-button" type="button">Keluar dari admin</button></section></div></section>
+<div class="admin-help"><h2>Belum mengatur backend?</h2><p>Ikuti file <code>README.md</code> di paket proyek untuk menghubungkan GitHub Pages ke Cloudflare Worker dengan secret yang aman.</p></div>
+</main></body></html>
