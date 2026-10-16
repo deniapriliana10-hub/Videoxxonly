@@ -1,0 +1,21 @@
+
+[
+  {
+    "id": "1",
+    "title": "Contoh Video Pertama",
+    "description": "Selamat datang di VideoKu.",
+    "thumbnail": "https://placehold.co/640x360/272727/ffffff?text=Video+1",
+    "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    "category": "Terbaru",
+    "views": 0
+  },
+  {
+    "id": "2",
+    "title": "Contoh Video Kedua",
+    "description": "Ini adalah video kedua di VideoKu.",
+    "thumbnail": "https://placehold.co/640x360/303030/ffffff?text=Video+2",
+    "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    "category": "Populer",
+    "views": 0
+  }
+]
