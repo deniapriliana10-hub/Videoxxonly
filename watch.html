@@ -9,10 +9,10 @@
   <title>Menonton — VideoKu</title>
 
   <link rel="icon" href="assets/logo.svg">
-  <link rel="stylesheet" href="assets/style.css?v=6">
+  <link rel="stylesheet" href="assets/style.css?v=7">
 
-  <script defer src="assets/config.js?v=6"></script>
-  <script defer src="assets/watch.js?v=6"></script>
+  <script defer src="assets/config.js?v=7"></script>
+  <script defer src="assets/watch.js?v=7"></script>
 
   <style>
     .ad-slot {
@@ -33,25 +33,55 @@
       max-width: 100%;
     }
 
-    #playerShell video,
-    #playerShell iframe {
-      display: block;
+    #playerShell {
       width: 100%;
-      max-width: 100%;
-      aspect-ratio: 16 / 9;
-      border: 0;
+      min-width: 0;
+      overflow: hidden;
       background: #000;
+      border-radius: 10px;
     }
 
     #playerShell video {
+      display: block;
+      width: 100%;
       height: auto;
       max-height: 75vh;
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
+      background: #000;
+    }
+
+    #playerShell.is-portrait video {
+      width: auto;
+      max-width: 100%;
+      margin: 0 auto;
+      aspect-ratio: auto;
+    }
+
+    #playerShell:fullscreen {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      background: #000;
+    }
+
+    #playerShell:fullscreen video {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      aspect-ratio: auto;
+      object-fit: contain;
     }
 
     .watch-error {
       padding: 24px 12px;
-      text-align: center;
       color: #bbb;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .watch-error a {
+      color: #fff;
     }
   </style>
 </head>
@@ -67,7 +97,7 @@
       ☰
     </button>
 
-    <a class="brand" href="index.html">
+    <a class="brand" href="index.html" aria-label="VideoKu beranda">
       <span class="brand-mark">▶</span>
       <span>VideoKu</span>
     </a>
@@ -77,11 +107,12 @@
         id="searchInput"
         type="search"
         placeholder="Telusuri video"
-        aria-label="Telusuri video">
+        aria-label="Telusuri video"
+        autocomplete="off">
       <button type="submit" aria-label="Cari">⌕</button>
     </form>
 
-    <a class="admin-link" href="admin.html">
+    <a class="admin-link" href="admin.html" title="Halaman admin">
       ⚙ <span>Admin</span>
     </a>
   </header>
@@ -97,6 +128,7 @@
 
     <div class="sidebar-divider"></div>
     <p class="sidebar-caption">VideoKu</p>
+    <p class="sidebar-note">Temukan dan tonton video dari koleksi kami.</p>
   </aside>
 
   <main class="watch-layout">
@@ -116,6 +148,7 @@
         <script src="https://wrenlull.com/b2f372f1490b8befb4745324cff509de/invoke.js"></script>
       </div>
 
+      <!-- PEMUTAR VIDEO -->
       <div id="playerShell" class="player-shell">
         <div class="loading-state">Memuat pemutar…</div>
       </div>
@@ -148,6 +181,7 @@
       </a>
     </section>
 
+    <!-- VIDEO LAINNYA -->
     <aside class="related-section">
       <h2>Video lainnya</h2>
       <div id="relatedVideos" class="related-list"></div>
@@ -160,6 +194,7 @@
       const button = document.getElementById("menuToggle");
 
       sidebar?.classList.toggle("sidebar-open");
+
       button?.setAttribute(
         "aria-expanded",
         String(sidebar?.classList.contains("sidebar-open") || false)
@@ -168,8 +203,12 @@
 
     document.getElementById("searchForm")?.addEventListener("submit", event => {
       event.preventDefault();
-      const query = document.getElementById("searchInput")?.value.trim() || "";
-      location.href = "index.html" +
+
+      const query =
+        document.getElementById("searchInput")?.value.trim() || "";
+
+      location.href =
+        "index.html" +
         (query ? "?q=" + encodeURIComponent(query) : "");
     });
   </script>
