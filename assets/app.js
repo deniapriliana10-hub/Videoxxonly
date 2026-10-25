@@ -1,505 +1,73 @@
-
-/* =====================================
-   VIDEO4U - APP.JS
-   API, VIDEO GRID, SEARCH, CATEGORY
-===================================== */
-
 (() => {
-  "use strict";
+  const config = window.VIDEOKU_CONFIG || { API_BASE_URL: "" };
+  const apiBase = (config.API_BASE_URL || "").replace(/\/$/, "");
+  const grid = document.getElementById("videoGrid");
+  const count = document.getElementById("videoCount");
+  const chips = document.getElementById("categoryChips");
+  const empty = document.getElementById("emptyState");
+  const searchInput = document.getElementById("searchInput");
+  let videos = [];
+  let category = "Semua";
+  let search = new URLSearchParams(location.search).get("q") || "";
+  let mode = "";
+  if (searchInput) searchInput.value = search;
 
-  const API_BASE =
-    window.VIDEOKU_CONFIG?.API_BASE_URL ||
-    "https://videoku-api.deniapriliana10.workers.dev";
-
-  const API_URL = API_BASE.replace(/\/+$/, "") + "/videos";
-
-  const $ = (id) => document.getElementById(id);
-
-  const grid = $("videoGrid");
-  const count = $("videoCount");
-  const emptyState = $("emptyState");
-  const searchForm = $("searchForm");
-  const searchInput = $("searchInput");
-  const clearSearch = $("clearSearch");
-  const categoryChips = $("categoryChips");
-  const sidebar = $("sidebar");
-  const menuToggle = $("menuToggle");
-
-  let allVideos = [];
-  let activeCategory = "Semua";
-  let searchQuery = "";
-  let activeFilter = "Terbaru";
-
-  // =========================
-  // MENU SAMPING
-  // =========================
-
-  if (menuToggle && sidebar) {
-    menuToggle.addEventListener("click", () => {
-      if (window.innerWidth <= 768) {
-        sidebar.classList.toggle("open");
-      } else {
-        sidebar.classList.toggle("sidebar-collapsed");
-      }
-    });
-
-    sidebar.querySelectorAll("a, button").forEach((item) => {
-      item.addEventListener("click", () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove("open");
-        }
-      });
-    });
-  }
-
-  // =========================
-  // STYLE KARTU VIDEO
-  // =========================
-
-  const style = document.createElement("style");
-
-  style.textContent = `
-    .sidebar.sidebar-collapsed {
-      transform: translateX(-100%);
-    }
-
-    .sidebar.sidebar-collapsed ~ .main-content {
-      margin-left: 0;
-      width: 100%;
-    }
-
-    .video-grid .video-card {
-      min-width: 0;
-      overflow: hidden;
-      border-radius: 12px;
-      background: #181818;
-      border: 1px solid #292929;
-    }
-
-    .video-card .video-thumbnail {
-      display: block;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      background: #272727;
-    }
-
-    .video-card .video-info {
-      padding: 12px;
-    }
-
-    .video-card .video-title {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
-      margin: 0 0 9px;
-      color: #f5f5f5;
-      font-size: 15px;
-      line-height: 1.45;
-      font-weight: 600;
-      overflow-wrap: anywhere;
-    }
-
-    .video-card .video-meta {
-      color: #aaa;
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .video-card .video-watch {
-      display: block;
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .video-card .video-watch:focus-visible {
-      outline: 2px solid #ff3030;
-      outline-offset: 3px;
-    }
-
-    .video-grid .loading-state,
-    .video-grid .error-state {
-      grid-column: 1 / -1;
-      padding: 24px 8px;
-      color: #aaa;
-      text-align: center;
-    }
-
-    .video-grid .error-state button {
-      margin-top: 12px;
-      padding: 10px 16px;
-      border: 0;
-      border-radius: 8px;
-      background: #ff3030;
-      color: white;
-      cursor: pointer;
-    }
-
-    @media (max-width: 768px) {
-      .video-card .video-info {
-        padding: 9px;
-      }
-
-      .video-card .video-title {
-        font-size: 14px;
-      }
-    }
-  `;
-
-  document.head.appendChild(style);
-
-  // =========================
-  // HELPER
-  // =========================
-
-  function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
-  }
-
-  function formatDate(value) {
-    if (!value) return "";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "";
-
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    });
-  }
-
-  function safeURL(value) {
-    try {
-      const url = new URL(value, window.location.href);
-
-      if (url.protocol === "https:" || url.protocol === "http:") {
-        return url.href;
-      }
-    } catch (_) {}
-
-    return "";
-  }
-
-  function getThumbnail(video) {
-    const thumb = safeURL(video.thumbnail);
-
-    if (thumb) return thumb;
-
-    return "https://placehold.co/640x360/272727/ffffff?text=VideoKu";
-  }
-
-  // =========================
-  // BACA DATA API
-  // =========================
-
+  const safeUrl = (value) => { try { const u = new URL(value); return u.protocol === "https:" ? u.href : ""; } catch { return ""; } };
+  const formatDate = (value) => { if (!value) return "VideoKu"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "VideoKu" : d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); };
   async function loadVideos() {
-    if (!grid) return;
-
-    grid.innerHTML =
-      '<div class="loading-state">Memuat video...</div>';
-
-    if (emptyState) emptyState.classList.add("hidden");
-
     try {
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json"
-        },
-        cache: "no-store"
-      });
-
-      if (!response.ok) {
-        throw new Error("Server mengembalikan HTTP " + response.status);
-      }
-
+      const url = apiBase ? `${apiBase}/api/videos` : "data/videos.json";
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error("Gagal mengambil daftar video");
       const data = await response.json();
-
-      if (!data || !Array.isArray(data.videos)) {
-        throw new Error("Format data API tidak sesuai.");
-      }
-
-      allVideos = data.videos.filter((video) => {
-        return video && video.id && video.title && video.videoUrl;
-      });
-
-      createCategories();
-      renderVideos();
-
+      videos = Array.isArray(data) ? data : (Array.isArray(data.videos) ? data.videos : []);
+      videos.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+      renderCategories(); renderVideos();
     } catch (error) {
-      console.error("VideoKu API error:", error);
-
-      grid.innerHTML = `
-        <div class="error-state">
-          <p>Video gagal dimuat.</p>
-          <p>Periksa koneksi internet atau server API.</p>
-          <button type="button" id="retryVideos">Coba lagi</button>
-        </div>
-      `;
-
-      if (count) count.textContent = "";
-
-      if (emptyState) emptyState.classList.add("hidden");
-
-      const retry = $("retryVideos");
-
-      if (retry) {
-        retry.addEventListener("click", loadVideos);
-      }
+      grid.innerHTML = "";
+      const box = document.createElement("div"); box.className = "error-state";
+      box.textContent = "Daftar video belum dapat dimuat. Periksa koneksi API atau isi data/videos.json.";
+      grid.append(box);
     }
   }
-
-  // =========================
-  // BUAT TOMBOL KATEGORI
-  // =========================
-
-  function createCategories() {
-    if (!categoryChips) return;
-
-    const categories = [
-      ...new Set(
-        allVideos
-          .map((video) => String(video.category || "").trim())
-          .filter(Boolean)
-      )
-    ];
-
-    categoryChips.innerHTML = "";
-
-    ["Semua", ...categories].forEach((category) => {
-      const button = document.createElement("button");
-
-      button.type = "button";
-      button.className =
-        "chip" + (category === activeCategory ? " selected" : "");
-
-      button.dataset.category = category;
-      button.textContent = category;
-
-      button.addEventListener("click", () => {
-        activeCategory = category;
-
-        categoryChips.querySelectorAll(".chip").forEach((chip) => {
-          chip.classList.toggle(
-            "selected",
-            chip.dataset.category === activeCategory
-          );
-        });
-
-        renderVideos();
-      });
-
-      categoryChips.appendChild(button);
-    });
-
-    if (!categories.includes(activeCategory)) {
-      activeCategory = "Semua";
-    }
-
-    categoryChips.querySelectorAll(".chip").forEach((chip) => {
-      chip.classList.toggle(
-        "selected",
-        chip.dataset.category === activeCategory
-      );
+  function renderCategories() {
+    const cats = [...new Set(videos.map(v => String(v.category || "Lainnya").trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, "id"));
+    chips.replaceChildren();
+    ["Semua", ...cats].forEach(cat => {
+      const btn = document.createElement("button"); btn.className = `chip${cat === category ? " selected" : ""}`; btn.type = "button"; btn.textContent = cat; btn.dataset.category = cat;
+      btn.addEventListener("click", () => { category = cat; renderCategories(); renderVideos(); }); chips.append(btn);
     });
   }
-
-  // =========================
-  // FILTER, PENCARIAN, SORTIR
-  // =========================
-
-  function getFilteredVideos() {
-    let videos = [...allVideos];
-
-    if (activeCategory !== "Semua") {
-      videos = videos.filter(
-        (video) => video.category === activeCategory
-      );
-    }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-
-      videos = videos.filter((video) => {
-        const text = [
-          video.title,
-          video.description,
-          video.category
-        ].join(" ").toLowerCase();
-
-        return text.includes(query);
-      });
-    }
-
-    if (activeFilter === "Populer") {
-      videos.sort(
-        (a, b) => Number(b.views || 0) - Number(a.views || 0)
-      );
-    } else {
-      videos.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime()
-      );
-    }
-
-    return videos;
+  function videoCard(video) {
+    const link = document.createElement("a"); link.className = "video-card"; link.href = `watch.html?id=${encodeURIComponent(video.id || "")}`;
+    const thumb = document.createElement("div"); thumb.className = "thumbnail-wrap";
+    const img = document.createElement("img"); img.loading = "lazy"; img.alt = video.title || "Thumbnail video"; img.src = safeUrl(video.thumbnail) || "assets/thumbnail-placeholder.svg"; img.onerror = () => { img.onerror = null; img.src = "assets/thumbnail-placeholder.svg"; };
+    const play = document.createElement("span"); play.className = "thumbnail-play"; play.textContent = "▶"; thumb.append(img, play);
+    const details = document.createElement("div"); details.className = "video-card-details";
+    const avatar = document.createElement("div"); avatar.className = "channel-avatar"; avatar.textContent = "V";
+    const text = document.createElement("div"); text.className = "video-card-text";
+    const title = document.createElement("h3"); title.textContent = video.title || "Tanpa judul";
+    const channel = document.createElement("p"); channel.className = "video-channel"; channel.textContent = "VideoKu";
+    const meta = document.createElement("p"); meta.className = "video-meta"; meta.textContent = `${video.category || "Lainnya"} · ${formatDate(video.createdAt)}`;
+    text.append(title, channel, meta); details.append(avatar, text); link.append(thumb, details); return link;
   }
-
-  // =========================
-  // TAMPILKAN KARTU VIDEO
-  // =========================
-
   function renderVideos() {
-    if (!grid) return;
-
-    const videos = getFilteredVideos();
-
-    if (count) {
-      count.textContent = videos.length + " video";
-    }
-
-    grid.innerHTML = "";
-
-    if (videos.length === 0) {
-      if (emptyState) {
-        emptyState.classList.remove("hidden");
-      } else {
-        grid.innerHTML =
-          '<div class="loading-state">Video tidak ditemukan.</div>';
-      }
-
-      return;
-    }
-
-    if (emptyState) emptyState.classList.add("hidden");
-
-    const fragment = document.createDocumentFragment();
-
-    videos.forEach((video) => {
-      const card = document.createElement("article");
-      card.className = "video-card";
-
-      const watchURL = safeURL(video.videoUrl);
-      const thumbnailURL = getThumbnail(video);
-      const title = escapeHTML(video.title);
-      const category = escapeHTML(video.category || "Video");
-      const date = escapeHTML(formatDate(video.createdAt));
-      const views = Number(video.views || 0);
-
-      const isVideoThumbnail = /\.(mp4|webm|ogg)(\?.*)?$/i
-        .test(thumbnailURL);
-
-      let thumbnail;
-
-      if (isVideoThumbnail) {
-        thumbnail = `
-          <video
-            class="video-thumbnail"
-            src="${escapeHTML(thumbnailURL)}"
-            muted
-            playsinline
-            preload="none"
-            aria-label="${title}"
-          ></video>
-        `;
-      } else {
-        thumbnail = `
-          <img
-            class="video-thumbnail"
-            src="${escapeHTML(thumbnailURL)}"
-            alt="${title}"
-            loading="lazy"
-            decoding="async"
-            onerror="this.onerror=null;this.src='https://placehold.co/640x360/272727/ffffff?text=VideoKu';"
-          >
-        `;
-      }
-
-      card.innerHTML = `
-        <a
-          class="video-watch"
-          ${watchURL
-            ? `href="${escapeHTML(watchURL)}" target="_blank" rel="noopener noreferrer"`
-            : ""}
-          aria-label="Tonton ${title}"
-        >
-          ${thumbnail}
-        </a>
-
-        <div class="video-info">
-          <h2 class="video-title">${title}</h2>
-          <div class="video-meta">${category}</div>
-          <div class="video-meta">
-            ${views} tayangan${date ? " · " + date : ""}
-          </div>
-        </div>
-      `;
-
-      fragment.appendChild(card);
+    const q = search.trim().toLocaleLowerCase("id");
+    let filtered = videos.filter(v => {
+      const matchesCategory = category === "Semua" || String(v.category || "Lainnya") === category;
+      const haystack = `${v.title || ""} ${v.description || ""} ${v.category || ""}`.toLocaleLowerCase("id");
+      return matchesCategory && haystack.includes(q);
     });
-
-    grid.appendChild(fragment);
+    if (mode === "Terbaru") filtered.sort((a,b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    grid.replaceChildren(); filtered.forEach(v => grid.append(videoCard(v)));
+    count.textContent = `${filtered.length} video`;
+    empty.classList.toggle("hidden", filtered.length > 0);
+    grid.classList.toggle("hidden", filtered.length === 0);
   }
-
-  // =========================
-  // PENCARIAN
-  // =========================
-
-  if (searchForm && searchInput) {
-    searchForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      searchQuery = searchInput.value.trim();
-      renderVideos();
-    });
-
-    searchInput.addEventListener("input", () => {
-      searchQuery = searchInput.value.trim();
-      renderVideos();
-    });
-  }
-
-  if (clearSearch) {
-    clearSearch.addEventListener("click", () => {
-      searchQuery = "";
-      activeCategory = "Semua";
-      activeFilter = "Terbaru";
-
-      if (searchInput) searchInput.value = "";
-
-      createCategories();
-      renderVideos();
-    });
-  }
-
-  // =========================
-  // MENU TERBARU / POPULER
-  // =========================
-
-  document.querySelectorAll("[data-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeFilter = button.dataset.filter === "Populer"
-        ? "Populer"
-        : "Terbaru";
-
-      renderVideos();
-    });
-  });
-
-  // =========================
-  // MULAI
-  // =========================
-
+  document.getElementById("searchForm")?.addEventListener("submit", e => { e.preventDefault(); search = searchInput.value; renderVideos(); });
+  searchInput?.addEventListener("input", () => { search = searchInput.value; renderVideos(); });
+  document.getElementById("clearSearch")?.addEventListener("click", () => { search = ""; category = "Semua"; mode = ""; searchInput.value = ""; renderCategories(); renderVideos(); });
+  document.querySelectorAll("[data-filter]").forEach(btn => btn.addEventListener("click", () => { mode = btn.dataset.filter; category = "Semua"; renderCategories(); renderVideos(); document.querySelectorAll("[data-filter]").forEach(x => x.classList.toggle("active", x === btn)); }));
+  document.getElementById("menuToggle")?.addEventListener("click", () => document.getElementById("sidebar")?.classList.toggle("sidebar-open"));
   loadVideos();
-
 })();
-      
