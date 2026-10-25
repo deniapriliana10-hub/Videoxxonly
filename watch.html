@@ -5,13 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f0f0f">
+  <meta name="description" content="Tonton video di VideoKu.">
   <title>Menonton — VideoKu</title>
 
   <link rel="icon" href="assets/logo.svg">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=6">
 
-  <script defer src="assets/config.js"></script>
-  <script defer src="assets/watch.js"></script>
+  <script defer src="assets/config.js?v=6"></script>
+  <script defer src="assets/watch.js?v=6"></script>
 
   <style>
     .ad-slot {
@@ -31,12 +32,38 @@
     .ad-slot iframe {
       max-width: 100%;
     }
+
+    #playerShell video,
+    #playerShell iframe {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      background: #000;
+    }
+
+    #playerShell video {
+      height: auto;
+      max-height: 75vh;
+    }
+
+    .watch-error {
+      padding: 24px 12px;
+      text-align: center;
+      color: #bbb;
+    }
   </style>
 </head>
 
 <body>
   <header class="topbar">
-    <button class="icon-button" id="menuToggle" aria-label="Buka menu">
+    <button
+      class="icon-button"
+      id="menuToggle"
+      type="button"
+      aria-label="Buka menu"
+      aria-expanded="false">
       ☰
     </button>
 
@@ -73,29 +100,26 @@
   </aside>
 
   <main class="watch-layout">
-
     <section class="watch-main">
 
       <!-- IKLAN ATAS 320 x 50 -->
       <div class="ad-slot">
         <script>
-          atOptions = {
-            'key': 'b2f372f1490b8befb4745324cff509de',
-            'format': 'iframe',
-            'height': 50,
-            'width': 320,
-            'params': {}
+          var atOptions = {
+            key: 'b2f372f1490b8befb4745324cff509de',
+            format: 'iframe',
+            height: 50,
+            width: 320,
+            params: {}
           };
         </script>
         <script src="https://wrenlull.com/b2f372f1490b8befb4745324cff509de/invoke.js"></script>
       </div>
 
-      <!-- PEMUTAR VIDEO -->
       <div id="playerShell" class="player-shell">
         <div class="loading-state">Memuat pemutar…</div>
       </div>
 
-      <!-- JUDUL VIDEO -->
       <div class="watch-title-row">
         <div>
           <h1 id="watchTitle">Memuat video…</h1>
@@ -103,18 +127,17 @@
         </div>
       </div>
 
-      <!-- DESKRIPSI VIDEO -->
       <div id="watchDescription" class="description-box"></div>
 
       <!-- IKLAN BAWAH 300 x 250 -->
       <div class="ad-slot ad-300">
         <script>
-          atOptions = {
-            'key': '0690c799600170da160d07b2a391cc37',
-            'format': 'iframe',
-            'height': 250,
-            'width': 300,
-            'params': {}
+          var atOptions = {
+            key: '0690c799600170da160d07b2a391cc37',
+            format: 'iframe',
+            height: 250,
+            width: 300,
+            params: {}
           };
         </script>
         <script src="https://wrenlull.com/0690c799600170da160d07b2a391cc37/invoke.js"></script>
@@ -125,12 +148,30 @@
       </a>
     </section>
 
-    <!-- VIDEO LAINNYA -->
     <aside class="related-section">
       <h2>Video lainnya</h2>
       <div id="relatedVideos" class="related-list"></div>
     </aside>
-
   </main>
+
+  <script>
+    document.getElementById("menuToggle")?.addEventListener("click", () => {
+      const sidebar = document.getElementById("sidebar");
+      const button = document.getElementById("menuToggle");
+
+      sidebar?.classList.toggle("sidebar-open");
+      button?.setAttribute(
+        "aria-expanded",
+        String(sidebar?.classList.contains("sidebar-open") || false)
+      );
+    });
+
+    document.getElementById("searchForm")?.addEventListener("submit", event => {
+      event.preventDefault();
+      const query = document.getElementById("searchInput")?.value.trim() || "";
+      location.href = "index.html" +
+        (query ? "?q=" + encodeURIComponent(query) : "");
+    });
+  </script>
 </body>
 </html>
