@@ -7,11 +7,13 @@
   <meta name="theme-color" content="#0f0f0f">
   <meta name="description" content="VideoKu — tonton video favoritmu.">
   <title>Video4u — Watch video</title>
+
   <link rel="icon" href="assets/logo.svg">
   <link rel="stylesheet" href="assets/style.css">
 
-  <script defer src="assets/config.js"></script>
-  <script defer src="assets/app.js"></script>
+  <!-- Cache busting -->
+  <script defer src="assets/config.js?v=4"></script>
+  <script defer src="assets/app.js?v=4"></script>
 
   <style>
     .ad-slot {
@@ -31,23 +33,56 @@
     .ad-slot iframe {
       max-width: 100%;
     }
+
+    #videoGrid .loading-state,
+    #videoGrid .error-state,
+    #videoGrid .diagnostic-state {
+      grid-column: 1 / -1;
+      padding: 24px 12px;
+      text-align: center;
+      color: #bbb;
+    }
+
+    #videoGrid .error-state button,
+    #videoGrid .diagnostic-state button {
+      padding: 10px 18px;
+      margin-top: 12px;
+      border: 0;
+      border-radius: 8px;
+      background: #e53935;
+      color: white;
+      cursor: pointer;
+    }
+
+    #videoGrid .error-state p {
+      overflow-wrap: anywhere;
+    }
   </style>
 </head>
 
 <body>
   <header class="topbar">
-    <button class="icon-button" id="menuToggle" aria-label="Buka menu">
+    <button
+      class="icon-button"
+      id="menuToggle"
+      type="button"
+      aria-label="Buka menu"
+      aria-expanded="false">
       <span class="hamburger">☰</span>
     </button>
 
-    <a class="brand" href="index.html" aria-label="VideoKu beranda">
+    <a class="brand" href="index.html" aria-label="Video4u beranda">
       <span class="brand-mark">▶</span>
       <span>Video4u</span>
     </a>
 
     <form class="searchbar" id="searchForm" role="search">
-      <input id="searchInput" type="search"
-        placeholder="Telusuri video" aria-label="Telusuri video">
+      <input
+        id="searchInput"
+        type="search"
+        placeholder="Telusuri video"
+        aria-label="Telusuri video"
+        autocomplete="off">
       <button aria-label="Cari" type="submit">⌕</button>
     </form>
 
@@ -61,15 +96,16 @@
       <span>⌂</span> Beranda
     </a>
 
-    <button class="side-link" data-filter="Terbaru">
+    <button class="side-link" type="button" data-filter="Terbaru">
       <span>◷</span> Terbaru
     </button>
 
-    <button class="side-link" data-filter="Populer">
+    <button class="side-link" type="button" data-filter="Populer">
       <span>▣</span> Pilihan
     </button>
 
     <div class="sidebar-divider"></div>
+
     <p class="sidebar-caption">Video4u</p>
     <p class="sidebar-note">
       Temukan dan tonton video dari koleksi kami.
@@ -81,19 +117,24 @@
     <!-- IKLAN ATAS 320 x 50 -->
     <div class="ad-slot">
       <script>
-        atOptions = {
-          'key': 'b2f372f1490b8befb4745324cff509de',
-          'format': 'iframe',
-          'height': 50,
-          'width': 320,
-          'params': {}
+        var atOptions = {
+          key: 'b2f372f1490b8befb4745324cff509de',
+          format: 'iframe',
+          height: 50,
+          width: 320,
+          params: {}
         };
       </script>
       <script src="https://wrenlull.com/b2f372f1490b8befb4745324cff509de/invoke.js"></script>
     </div>
 
     <nav class="chips" aria-label="Kategori" id="categoryChips">
-      <button class="chip selected" data-category="Semua">Semua</button>
+      <button
+        class="chip selected"
+        type="button"
+        data-category="Semua">
+        Semua
+      </button>
     </nav>
 
     <section class="section-heading">
@@ -102,14 +143,16 @@
     </section>
 
     <div id="videoGrid" class="video-grid" aria-live="polite">
-      <div class="loading-state">Memuat video…</div>
+      <div class="loading-state">
+        Menghubungkan ke server video...
+      </div>
     </div>
 
     <div id="emptyState" class="empty-state hidden">
       <div class="empty-icon">⌕</div>
       <h2>Video tidak ditemukan</h2>
       <p>Coba kata kunci atau kategori lain.</p>
-      <button class="primary-button" id="clearSearch">
+      <button class="primary-button" id="clearSearch" type="button">
         Tampilkan semua video
       </button>
     </div>
@@ -117,12 +160,12 @@
     <!-- IKLAN BAWAH 300 x 250 -->
     <div class="ad-slot ad-300">
       <script>
-        atOptions = {
-          'key': '0690c799600170da160d07b2a391cc37',
-          'format': 'iframe',
-          'height': 250,
-          'width': 300,
-          'params': {}
+        var atOptions = {
+          key: '0690c799600170da160d07b2a391cc37',
+          format: 'iframe',
+          height: 250,
+          width: 300,
+          params: {}
         };
       </script>
       <script src="https://wrenlull.com/0690c799600170da160d07b2a391cc37/invoke.js"></script>
@@ -132,5 +175,43 @@
       VideoKu · Dibuat dengan GitHub Pages
     </footer>
   </main>
+
+  <!-- Diagnosis jika app.js tidak berhasil berjalan -->
+  <script>
+    (() => {
+      const grid = document.getElementById("videoGrid");
+      if (!grid) return;
+
+      let appStarted = false;
+
+      // app.js dapat memberi tanda ketika berhasil dijalankan.
+      window.addEventListener("videoku-app-started", () => {
+        appStarted = true;
+      });
+
+      // Jika app.js tidak berjalan, tampilkan penyebab yang bisa diperiksa.
+      window.setTimeout(() => {
+        if (appStarted) return;
+
+        if (grid.querySelector(".video-card")) return;
+
+        grid.innerHTML = `
+          <div class="diagnostic-state">
+            <p>Aplikasi video belum berhasil dijalankan.</p>
+            <p>Periksa file assets/app.js dan assets/config.js.</p>
+            <button type="button" id="diagnosticRetry">
+              Coba muat ulang
+            </button>
+          </div>
+        `;
+
+        document.getElementById("diagnosticRetry")
+          ?.addEventListener("click", () => {
+            window.location.reload();
+          });
+      }, 10000);
+    })();
+  </script>
 </body>
-</html>
+  </html>
+  
