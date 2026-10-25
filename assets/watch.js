@@ -16,8 +16,8 @@
 
   const safeUrl = (value) => {
     try {
-      const u = new URL(value);
-      return u.protocol === "https:" ? u.href : "";
+      const url = new URL(value);
+      return url.protocol === "https:" ? url.href : "";
     } catch {
       return "";
     }
@@ -56,7 +56,8 @@
       object-fit: contain;
     }
 
-    .player-shell:fullscreen {
+    .player-shell:fullscreen,
+    .player-shell:-webkit-full-screen {
       width: 100%;
       height: 100%;
       max-width: none;
@@ -65,23 +66,11 @@
       background: #000;
     }
 
-    .player-shell:fullscreen .video-player {
-      width: 100%;
-      height: 100%;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .player-shell:-webkit-full-screen {
-      width: 100%;
-      height: 100%;
-      background: #000;
-    }
-
+    .player-shell:fullscreen .video-player,
     .player-shell:-webkit-full-screen .video-player {
       width: 100%;
       height: 100%;
+      max-width: 100%;
       max-height: 100%;
       object-fit: contain;
     }
@@ -90,13 +79,14 @@
 
   async function run() {
     try {
-      const response = await fetch(
-        apiBase ? `${apiBase}/videos` : "data/videos.json",
-        { cache: "no-store" }
-      );
+      const url = apiBase
+        ? `${apiBase}/api/videos`
+        : "data/videos.json";
+
+      const response = await fetch(url, { cache: "no-store" });
 
       if (!response.ok) {
-        throw new Error("Gagal mengambil data video");
+        throw new Error(`Gagal mengambil data video (${response.status})`);
       }
 
       const data = await response.json();
@@ -106,7 +96,7 @@
           ? data.videos
           : [];
 
-      const video = videos.find((v) => String(v.id) === String(id));
+      const video = videos.find((item) => String(item.id) === String(id));
 
       if (!video) {
         title.textContent = "Video tidak ditemukan";
@@ -133,76 +123,80 @@
         player.textContent =
           "URL video tidak valid. Admin harus menggunakan URL HTTPS.";
       } else {
-        const v = document.createElement("video");
+        const videoElement = document.createElement("video");
 
-        v.className = "video-player";
-        v.controls = true;
-        v.preload = "metadata";
-        v.playsInline = true;
-        v.setAttribute("playsinline", "");
-        v.setAttribute("webkit-playsinline", "");
+        videoElement.className = "video-player";
+        videoElement.controls = true;
+        videoElement.preload = "metadata";
+        videoElement.playsInline = true;
+        videoElement.setAttribute("playsinline", "");
+        videoElement.setAttribute("webkit-playsinline", "");
 
         const poster = safeUrl(video.thumbnail);
-        if (poster) v.poster = poster;
+        if (poster) videoElement.poster = poster;
 
-        v.src = src;
+        videoElement.src = src;
 
-        v.addEventListener("loadedmetadata", () => {
+        videoElement.addEventListener("loadedmetadata", () => {
           player.classList.toggle(
             "is-portrait",
-            v.videoHeight > v.videoWidth
+            videoElement.videoHeight > videoElement.videoWidth
           );
         });
 
-        v.addEventListener("error", () => {
+        videoElement.addEventListener("error", () => {
           console.warn("Video gagal dimuat. Periksa URL atau format CDN.");
         });
 
-        // Pemutar hanya berisi video; tombol biru tambahan dihapus.
-        player.replaceChildren(v);
+        // Tidak membuat tombol fullscreen tambahan.
+        // Kontrol bawaan browser tetap aktif.
+        player.replaceChildren(videoElement);
       }
 
       related.replaceChildren();
 
       videos
-        .filter((v) => String(v.id) !== String(id))
+        .filter((item) => String(item.id) !== String(id))
         .slice(0, 8)
-        .forEach((v) => {
-          const a = document.createElement("a");
-          a.className = "related-card";
-          a.href = `watch.html?id=${encodeURIComponent(v.id || "")}`;
+        .forEach((item) => {
+          const link = document.createElement("a");
+          link.className = "related-card";
+          link.href = `watch.html?id=${encodeURIComponent(item.id || "")}`;
 
-          const img = document.createElement("img");
-          img.loading = "lazy";
-          img.alt = "";
-          img.src = safeUrl(v.thumbnail) || "assets/thumbnail-placeholder.svg";
-          img.onerror = () => {
-            img.onerror = null;
-            img.src = "assets/thumbnail-placeholder.svg";
+          const image = document.createElement("img");
+          image.loading = "lazy";
+          image.alt = "";
+          image.src =
+            safeUrl(item.thumbnail) || "assets/thumbnail-placeholder.svg";
+
+          image.onerror = () => {
+            image.onerror = null;
+            image.src = "assets/thumbnail-placeholder.svg";
           };
 
           const box = document.createElement("div");
-          const h = document.createElement("h3");
-          h.textContent = v.title || "Tanpa judul";
+          const heading = document.createElement("h3");
+          heading.textContent = item.title || "Tanpa judul";
 
-          const p = document.createElement("p");
-          p.textContent = `VideoKu · ${v.category || "Lainnya"}`;
+          const paragraph = document.createElement("p");
+          paragraph.textContent = `VideoKu · ${item.category || "Lainnya"}`;
 
-          box.append(h, p);
-          a.append(img, box);
-          related.appendChild(a);
+          box.append(heading, paragraph);
+          link.append(image, box);
+          related.appendChild(link);
         });
     } catch (error) {
-      console.error(error);
+      console.error("VideoKu watch error:", error);
       title.textContent = "Tidak dapat memuat video";
       player.textContent = "Periksa koneksi API dan konfigurasi website.";
     }
   }
 
-  document.getElementById("searchForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const q = document.getElementById("searchInput")?.value.trim() || "";
-    location.href = `index.html${q ? `?q=${encodeURIComponent(q)}` : ""}`;
+  document.getElementById("searchForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const query =
+      document.getElementById("searchInput")?.value.trim() || "";
+    location.href = `index.html${query ? `?q=${encodeURIComponent(query)}` : ""}`;
   });
 
   document.getElementById("menuToggle")?.addEventListener("click", () => {
