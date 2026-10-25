@@ -1,7 +1,9 @@
 
 (() => {
+  "use strict";
+
   const config = window.VIDEOKU_CONFIG || { API_BASE_URL: "" };
-  const apiBase = (config.API_BASE_URL || "").replace(/\/$/, "");
+  const apiBase = (config.API_BASE_URL || "").replace(/\/+$/, "");
   const id = new URLSearchParams(location.search).get("id");
 
   const player = document.getElementById("playerShell");
@@ -10,7 +12,9 @@
   const description = document.getElementById("watchDescription");
   const related = document.getElementById("relatedVideos");
 
-  const safeUrl = value => {
+  if (!player || !title || !meta || !description || !related) return;
+
+  const safeUrl = (value) => {
     try {
       const u = new URL(value);
       return u.protocol === "https:" ? u.href : "";
@@ -19,7 +23,6 @@
     }
   };
 
-  // CSS khusus pemutar: video portrait dan landscape tetap utuh
   const style = document.createElement("style");
   style.textContent = `
     .player-shell {
@@ -82,43 +85,28 @@
       max-height: 100%;
       object-fit: contain;
     }
-
-    .player-fullscreen-btn {
-      display: block;
-      margin: 10px 0 0 auto;
-      padding: 10px 16px;
-      border: 0;
-      border-radius: 8px;
-      background: #2563eb;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .player-fullscreen-btn:hover {
-      background: #1d4ed8;
-    }
-
-    .player-fullscreen-btn:focus-visible {
-      outline: 2px solid #60a5fa;
-      outline-offset: 3px;
-    }
   `;
   document.head.appendChild(style);
 
   async function run() {
     try {
       const response = await fetch(
-        apiBase ? `${apiBase}/api/videos` : "data/videos.json",
+        apiBase ? `${apiBase}/videos` : "data/videos.json",
         { cache: "no-store" }
       );
 
-      if (!response.ok) throw new Error("Gagal mengambil data video");
+      if (!response.ok) {
+        throw new Error("Gagal mengambil data video");
+      }
 
       const data = await response.json();
-      const videos = Array.isArray(data) ? data : (data.videos || []);
-      const video = videos.find(v => String(v.id) === String(id));
+      const videos = Array.isArray(data)
+        ? data
+        : Array.isArray(data.videos)
+          ? data.videos
+          : [];
+
+      const video = videos.find((v) => String(v.id) === String(id));
 
       if (!video) {
         title.textContent = "Video tidak ditemukan";
@@ -127,14 +115,14 @@
         return;
       }
 
-      document.title = `${video.title} — VideoKu`;
+      document.title = `${video.title || "Video"} — VideoKu`;
       title.textContent = video.title || "Tanpa judul";
 
       meta.textContent =
         `${video.category || "Lainnya"} · ` +
-        `${video.createdAt
+        (video.createdAt
           ? new Date(video.createdAt).toLocaleDateString("id-ID")
-          : "VideoKu"}`;
+          : "VideoKu");
 
       description.textContent =
         video.description || "Tidak ada deskripsi untuk video ini.";
@@ -153,57 +141,33 @@
         v.playsInline = true;
         v.setAttribute("playsinline", "");
         v.setAttribute("webkit-playsinline", "");
-        v.poster = safeUrl(video.thumbnail);
+
+        const poster = safeUrl(video.thumbnail);
+        if (poster) v.poster = poster;
+
         v.src = src;
 
-        // Deteksi orientasi asli video setelah metadata tersedia
         v.addEventListener("loadedmetadata", () => {
-          if (v.videoHeight > v.videoWidth) {
-            player.classList.add("is-portrait");
-          } else {
-            player.classList.remove("is-portrait");
-          }
+          player.classList.toggle(
+            "is-portrait",
+            v.videoHeight > v.videoWidth
+          );
         });
-
-        // Tombol fullscreen
-        const fullscreenBtn = document.createElement("button");
-        fullscreenBtn.type = "button";
-        fullscreenBtn.className = "player-fullscreen-btn";
-        fullscreenBtn.textContent = "⛶ Layar penuh";
-        fullscreenBtn.setAttribute("aria-label", "Tampilkan video layar penuh");
-
-        fullscreenBtn.addEventListener("click", async () => {
-          try {
-            if (document.fullscreenElement) {
-              await document.exitFullscreen();
-            } else if (player.requestFullscreen) {
-              await player.requestFullscreen();
-            } else if (v.webkitEnterFullscreen) {
-              // Dukungan fullscreen video pada Safari iOS tertentu
-              v.webkitEnterFullscreen();
-            } else {
-              alert("Fullscreen tidak didukung browser ini.");
-            }
-          } catch {
-            alert("Tidak dapat membuka layar penuh. Coba putar video dahulu.");
-          }
-        });
-
-        player.replaceChildren(v);
-        player.appendChild(fullscreenBtn);
 
         v.addEventListener("error", () => {
-          // Tidak menghapus video atau URL agar pengguna dapat mencoba lagi
           console.warn("Video gagal dimuat. Periksa URL atau format CDN.");
         });
+
+        // Pemutar hanya berisi video; tombol biru tambahan dihapus.
+        player.replaceChildren(v);
       }
 
       related.replaceChildren();
 
       videos
-        .filter(v => String(v.id) !== String(id))
+        .filter((v) => String(v.id) !== String(id))
         .slice(0, 8)
-        .forEach(v => {
+        .forEach((v) => {
           const a = document.createElement("a");
           a.className = "related-card";
           a.href = `watch.html?id=${encodeURIComponent(v.id || "")}`;
@@ -235,9 +199,9 @@
     }
   }
 
-  document.getElementById("searchForm")?.addEventListener("submit", e => {
+  document.getElementById("searchForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const q = document.getElementById("searchInput").value.trim();
+    const q = document.getElementById("searchInput")?.value.trim() || "";
     location.href = `index.html${q ? `?q=${encodeURIComponent(q)}` : ""}`;
   });
 
