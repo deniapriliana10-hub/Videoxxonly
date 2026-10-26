@@ -10,6 +10,8 @@
   const chips = document.getElementById("categoryChips");
   const empty = document.getElementById("emptyState");
   const searchInput = document.getElementById("searchInput");
+  const sidebar = document.getElementById("sidebar");
+  const menuToggle = document.getElementById("menuToggle");
 
   if (!grid || !chips || !empty) {
     console.error("Elemen utama VideoKu tidak ditemukan.");
@@ -33,36 +35,38 @@
   }
 
   function formatDate(value) {
-    if (!value) return "VideoKu";
-    const date = new Date(value);
+    if (!value) return "";
 
-    return Number.isNaN(date.getTime())
-      ? "VideoKu"
-      : date.toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "short",
-          year: "numeric"
-        });
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  function formatViews(value) {
+    const views = Number(value);
+    const safeViews = Number.isFinite(views) && views > 0
+      ? Math.floor(views)
+      : 0;
+
+    return `${safeViews.toLocaleString("id-ID")} views`;
   }
 
   async function loadVideos() {
     const sources = [];
 
-    // Sumber API, jika dikonfigurasi.
-    if (apiBase) {
-      sources.push(`${apiBase}/api/videos`);
-    }
-
-    // Fallback ke file JSON pada website saat ini.
+    if (apiBase) sources.push(`${apiBase}/api/videos`);
     sources.push(new URL("data/videos.json", document.baseURI).href);
 
     let lastError;
 
     for (const source of [...new Set(sources)]) {
       try {
-        const response = await fetch(source, {
-          cache: "no-store"
-        });
+        const response = await fetch(source, { cache: "no-store" });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -75,12 +79,10 @@
             ? data.videos
             : null;
 
-        if (!list) {
-          throw new Error("Format data video tidak valid");
-        }
+        if (!list) throw new Error("Format data video tidak valid");
 
-        videos = list.filter(
-          video => video && typeof video === "object"
+        videos = list.filter(video =>
+          video && typeof video === "object"
         );
 
         videos.sort((a, b) =>
@@ -101,6 +103,7 @@
       }
     }
 
+    grid.classList.remove("hidden");
     grid.replaceChildren();
 
     const box = document.createElement("div");
@@ -171,6 +174,7 @@
     const play = document.createElement("span");
     play.className = "thumbnail-play";
     play.textContent = "▶";
+    play.setAttribute("aria-hidden", "true");
 
     thumbnail.append(image, play);
 
@@ -180,6 +184,7 @@
     const avatar = document.createElement("div");
     avatar.className = "channel-avatar";
     avatar.textContent = "V";
+    avatar.setAttribute("aria-hidden", "true");
 
     const text = document.createElement("div");
     text.className = "video-card-text";
@@ -189,12 +194,18 @@
 
     const channel = document.createElement("p");
     channel.className = "video-channel";
-    channel.textContent = "VideoKu";
+    channel.textContent = "Video4u";
 
     const meta = document.createElement("p");
     meta.className = "video-meta";
-    meta.textContent =
-      `${video.category || "Lainnya"} · ${formatDate(video.createdAt)}`;
+
+    const parts = [formatViews(video.views)];
+    if (video.category) parts.push(video.category);
+
+    const date = formatDate(video.createdAt);
+    if (date) parts.push(date);
+
+    meta.textContent = parts.join(" · ");
 
     text.append(title, channel, meta);
     details.append(avatar, text);
@@ -224,12 +235,18 @@
           String(a.createdAt || "")
         )
       );
+    } else if (mode === "Populer") {
+      filtered.sort((a, b) =>
+        (Number(b.views) || 0) - (Number(a.views) || 0)
+      );
     }
 
     grid.replaceChildren();
     filtered.forEach(video => grid.append(videoCard(video)));
 
-    if (count) count.textContent = `${filtered.length} video`;
+    if (count) {
+      count.textContent = `${filtered.length} video`;
+    }
 
     empty.classList.toggle("hidden", filtered.length > 0);
     grid.classList.toggle("hidden", filtered.length === 0);
@@ -268,21 +285,31 @@
       document.querySelectorAll("[data-filter]").forEach(item => {
         item.classList.toggle("active", item === button);
       });
+
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        closeSidebar();
+      }
     });
   });
 
-  document.getElementById("menuToggle")?.addEventListener("click", () => {
-    const sidebar = document.getElementById("sidebar");
-    const toggle = document.getElementById("menuToggle");
+  function closeSidebar() {
+    sidebar?.classList.remove("open", "sidebar-open");
+    document.body.classList.remove("sidebar-open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  }
 
-    sidebar?.classList.toggle("sidebar-open");
+  menuToggle?.addEventListener("click", () => {
+    if (!sidebar) return;
 
-    if (toggle) {
-      toggle.setAttribute(
-        "aria-expanded",
-        String(sidebar?.classList.contains("sidebar-open") || false)
-      );
-    }
+    const isOpen = !sidebar.classList.contains("open");
+    sidebar.classList.toggle("open", isOpen);
+    sidebar.classList.remove("sidebar-open");
+    document.body.classList.toggle("sidebar-open", isOpen);
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeSidebar();
   });
 
   loadVideos();
