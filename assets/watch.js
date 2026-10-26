@@ -1,3 +1,4 @@
+
 (() => {
   "use strict";
 
@@ -10,6 +11,8 @@
   const meta = document.getElementById("watchMeta");
   const description = document.getElementById("watchDescription");
   const related = document.getElementById("relatedVideos");
+  const sidebar = document.getElementById("sidebar");
+  const menuToggle = document.getElementById("menuToggle");
 
   if (!player || !title || !meta || !description || !related) return;
 
@@ -22,19 +25,44 @@
     }
   };
 
+  const formatViews = value => {
+    const number = Number(value);
+    const views = Number.isFinite(number) && number > 0
+      ? Math.floor(number)
+      : 0;
+
+    return `${views.toLocaleString("id-ID")} views`;
+  };
+
+  const formatDate = value => {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
   const style = document.createElement("style");
   style.textContent = `
     .player-shell {
       position: relative;
       width: 100%;
       min-width: 0;
-      background: #000;
+      min-height: 180px;
       display: flex;
       justify-content: center;
       align-items: center;
       overflow: hidden;
-      border-radius: 10px;
+      border: 1px solid #282d39;
+      border-radius: 14px;
+      background: #000;
     }
+
     .player-shell .video-player {
       display: block;
       width: 100%;
@@ -44,11 +72,13 @@
       background: #000;
       margin: 0 auto;
     }
+
     .player-shell.is-portrait .video-player {
       width: auto;
       max-width: 100%;
       max-height: 75vh;
     }
+
     .player-shell:fullscreen,
     .player-shell:-webkit-full-screen {
       width: 100%;
@@ -56,6 +86,7 @@
       border-radius: 0;
       background: #000;
     }
+
     .player-shell:fullscreen .video-player,
     .player-shell:-webkit-full-screen .video-player {
       width: 100%;
@@ -64,10 +95,101 @@
       max-height: 100%;
       object-fit: contain;
     }
+
     .watch-error {
       padding: 20px;
-      color: #bbb;
+      color: #b7bfce;
       text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .watch-stats {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      color: #969eae;
+      font-size: 13px;
+    }
+
+    .watch-stats .views-count {
+      color: #80adff;
+      font-weight: 650;
+    }
+
+    .watch-description {
+      margin-top: 18px;
+      padding: 17px;
+      border: 1px solid #282d39;
+      border-radius: 12px;
+      background: #12151d;
+      color: #c4cbd8;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .related-card {
+      display: flex;
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid #282d39;
+      border-radius: 12px;
+      background: #12151d;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color .2s;
+    }
+
+    .related-card:hover {
+      border-color: #4385ff;
+    }
+
+    .related-card img {
+      display: block;
+      flex-shrink: 0;
+      width: 145px;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #202633;
+    }
+
+    .related-card h3 {
+      margin: 2px 0 6px;
+      color: #f4f6fb;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .related-card p {
+      margin: 0 0 5px;
+      color: #969eae;
+      font-size: 11px;
+    }
+
+    .related-card .related-views {
+      color: #80adff;
+    }
+
+    @media (max-width: 600px) {
+      .player-shell {
+        min-height: 160px;
+        border-radius: 10px;
+      }
+
+      .related-card {
+        gap: 10px;
+        padding: 8px;
+      }
+
+      .related-card img {
+        width: 125px;
+      }
+
+      .watch-description {
+        padding: 13px;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -75,9 +197,7 @@
   async function fetchVideoList() {
     const sources = [];
 
-    if (apiBase) {
-      sources.push(`${apiBase}/api/videos`);
-    }
+    if (apiBase) sources.push(`${apiBase}/api/videos`);
 
     sources.push(
       new URL("data/videos.json", document.baseURI).href
@@ -87,14 +207,15 @@
 
     for (const source of [...new Set(sources)]) {
       try {
-        const response = await fetch(source, { cache: "no-store" });
+        const response = await fetch(source, {
+          cache: "no-store"
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
-
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data?.videos)
@@ -119,37 +240,45 @@
   function showRelated(videos, currentId) {
     related.replaceChildren();
 
-    videos
+    const others = videos
       .filter(item => String(item.id) !== String(currentId))
-      .slice(0, 8)
-      .forEach(item => {
-        const link = document.createElement("a");
-        link.className = "related-card";
-        link.href = `watch.html?id=${encodeURIComponent(item.id || "")}`;
+      .sort((a, b) =>
+        (Number(b.views) || 0) - (Number(a.views) || 0)
+      )
+      .slice(0, 8);
 
-        const image = document.createElement("img");
-        image.loading = "lazy";
-        image.alt = item.title || "Thumbnail video";
-        image.src =
-          safeUrl(item.thumbnail) || "assets/thumbnail-placeholder.svg";
+    others.forEach(item => {
+      const link = document.createElement("a");
+      link.className = "related-card";
+      link.href = `watch.html?id=${encodeURIComponent(item.id || "")}`;
 
-        image.onerror = () => {
-          image.onerror = null;
-          image.src = "assets/thumbnail-placeholder.svg";
-        };
+      const image = document.createElement("img");
+      image.loading = "lazy";
+      image.alt = item.title || "Thumbnail video";
+      image.src =
+        safeUrl(item.thumbnail) || "assets/thumbnail-placeholder.svg";
 
-        const box = document.createElement("div");
+      image.onerror = () => {
+        image.onerror = null;
+        image.src = "assets/thumbnail-placeholder.svg";
+      };
 
-        const heading = document.createElement("h3");
-        heading.textContent = item.title || "Tanpa judul";
+      const box = document.createElement("div");
 
-        const paragraph = document.createElement("p");
-        paragraph.textContent = `VideoKu · ${item.category || "Lainnya"}`;
+      const heading = document.createElement("h3");
+      heading.textContent = item.title || "Tanpa judul";
 
-        box.append(heading, paragraph);
-        link.append(image, box);
-        related.appendChild(link);
-      });
+      const category = document.createElement("p");
+      category.textContent = item.category || "Lainnya";
+
+      const views = document.createElement("p");
+      views.className = "related-views";
+      views.textContent = formatViews(item.views);
+
+      box.append(heading, category, views);
+      link.append(image, box);
+      related.appendChild(link);
+    });
   }
 
   async function run() {
@@ -171,15 +300,40 @@
         return;
       }
 
-      document.title = `${video.title || "Video"} — VideoKu`;
+      document.title = `${video.title || "Video"} — Video4u`;
       title.textContent = video.title || "Tanpa judul";
 
-      meta.textContent =
-        `${video.category || "Lainnya"} · ` +
-        (video.createdAt
-          ? new Date(video.createdAt).toLocaleDateString("id-ID")
-          : "VideoKu");
+      meta.replaceChildren();
 
+      const stats = document.createElement("div");
+      stats.className = "watch-stats";
+
+      const views = document.createElement("span");
+      views.className = "views-count";
+      views.textContent = formatViews(video.views);
+
+      const separator = document.createElement("span");
+      separator.textContent = "·";
+
+      const category = document.createElement("span");
+      category.textContent = video.category || "Lainnya";
+
+      const dateText = formatDate(video.createdAt);
+      stats.append(views, separator, category);
+
+      if (dateText) {
+        const dateSeparator = document.createElement("span");
+        dateSeparator.textContent = "·";
+
+        const date = document.createElement("span");
+        date.textContent = dateText;
+
+        stats.append(dateSeparator, date);
+      }
+
+      meta.appendChild(stats);
+
+      description.classList.add("watch-description");
       description.textContent =
         video.description || "Tidak ada deskripsi untuk video ini.";
 
@@ -209,11 +363,7 @@
         });
 
         videoElement.addEventListener("error", () => {
-          console.error(
-            "Video gagal diputar:",
-            src,
-            videoElement.error
-          );
+          console.error("Video gagal diputar:", src, videoElement.error);
 
           let errorBox = player.querySelector(".watch-error");
 
@@ -224,7 +374,7 @@
           }
 
           errorBox.textContent =
-            "Video gagal diputar. Periksa apakah URL CDN masih aktif dan file MP4 dapat diakses.";
+            "Video gagal diputar. Periksa apakah URL CDN masih aktif dan file video dapat diakses.";
         });
 
         player.replaceChildren(videoElement);
@@ -234,6 +384,7 @@
 
     } catch (error) {
       console.error("VideoKu watch error:", error);
+
       title.textContent = "Tidak dapat memuat video";
       meta.textContent = "";
       description.textContent = error.message || "Terjadi kesalahan.";
@@ -250,6 +401,7 @@
 
   document.getElementById("searchForm")?.addEventListener("submit", event => {
     event.preventDefault();
+
     const query =
       document.getElementById("searchInput")?.value.trim() || "";
 
@@ -257,8 +409,24 @@
       `index.html${query ? `?q=${encodeURIComponent(query)}` : ""}`;
   });
 
-  document.getElementById("menuToggle")?.addEventListener("click", () => {
-    document.getElementById("sidebar")?.classList.toggle("sidebar-open");
+  function closeSidebar() {
+    sidebar?.classList.remove("open", "sidebar-open");
+    document.body.classList.remove("sidebar-open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  }
+
+  menuToggle?.addEventListener("click", () => {
+    if (!sidebar) return;
+
+    const isOpen = !sidebar.classList.contains("open");
+    sidebar.classList.toggle("open", isOpen);
+    sidebar.classList.remove("sidebar-open");
+    document.body.classList.toggle("sidebar-open", isOpen);
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeSidebar();
   });
 
   run();
