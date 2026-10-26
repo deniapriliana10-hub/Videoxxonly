@@ -4,69 +4,590 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f0f0f">
-  <meta name="description" content="VideoKu — tonton video favoritmu.">
-  <title>Video4u — Watch video</title>
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="description" content="Video4u — temukan dan tonton koleksi video favoritmu.">
+  <title>Video4u — Temukan Video Favoritmu</title>
 
   <link rel="icon" href="assets/logo.svg">
   <link rel="stylesheet" href="assets/style.css">
 
-  <!-- Cache busting -->
   <script defer src="assets/config.js?v=4"></script>
   <script defer src="assets/app.js?v=4"></script>
 
   <style>
-    .ad-slot {
-      width: 100%;
+    :root {
+      color-scheme: dark;
+      --page: #0b0d12;
+      --surface: #12151d;
+      --surface-2: #191d27;
+      --border: #282d39;
+      --text: #f4f6fb;
+      --muted: #969eae;
+      --accent: #4385ff;
+      --accent-hover: #6399ff;
+      --radius: 15px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    button, input { font: inherit; }
+
+    a { color: inherit; text-decoration: none; }
+
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
       display: flex;
-      justify-content: center;
       align-items: center;
-      margin: 20px auto;
+      gap: 20px;
+      min-height: 72px;
+      padding: 12px clamp(14px, 3vw, 38px);
+      background: rgba(11, 13, 18, .94);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -.6px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 37px;
+      height: 37px;
+      border-radius: 11px;
+      background: var(--accent);
+      color: white;
+      font-size: 16px;
+      box-shadow: 0 5px 18px #4385ff38;
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .searchbar {
+      display: flex;
+      align-items: center;
+      width: min(100%, 560px);
+      height: 43px;
+      margin: 0 auto;
       overflow: hidden;
-      min-height: 50px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--surface);
+      transition: border-color .2s;
     }
 
-    .ad-slot.ad-300 {
-      min-height: 250px;
+    .searchbar:focus-within {
+      border-color: var(--accent);
     }
 
-    .ad-slot iframe {
-      max-width: 100%;
-    }
-
-    #videoGrid .loading-state,
-    #videoGrid .error-state,
-    #videoGrid .diagnostic-state {
-      grid-column: 1 / -1;
-      padding: 24px 12px;
-      text-align: center;
-      color: #bbb;
-    }
-
-    #videoGrid .error-state button,
-    #videoGrid .diagnostic-state button {
-      padding: 10px 18px;
-      margin-top: 12px;
+    .searchbar input {
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+      padding: 0 15px;
+      outline: none;
       border: 0;
-      border-radius: 8px;
-      background: #e53935;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .searchbar input::placeholder { color: #777f90; }
+
+    .searchbar button {
+      width: 49px;
+      height: 100%;
+      flex-shrink: 0;
+      border: 0;
+      background: transparent;
+      color: #bfc7d7;
+      font-size: 23px;
+      cursor: pointer;
+    }
+
+    .admin-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .admin-link:hover,
+    .icon-button:hover {
+      border-color: #4c6da9;
+      background: var(--surface-2);
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 73px;
+      bottom: 0;
+      left: 0;
+      z-index: 80;
+      width: 230px;
+      padding: 22px 15px;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      background: var(--page);
+    }
+
+    .side-link {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 11px;
+      background: transparent;
+      color: #aeb6c6;
+      text-align: left;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .side-link span {
+      width: 20px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .side-link:hover,
+    .side-link.active {
+      background: #4385ff17;
+      color: #78a9ff;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      margin: 20px 4px;
+      background: var(--border);
+    }
+
+    .sidebar-caption {
+      padding: 0 12px;
+      color: #6f788a;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-note {
+      padding: 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .main-content {
+      width: auto;
+      max-width: 1800px;
+      min-height: calc(100vh - 72px);
+      margin-left: 230px;
+      padding: 20px clamp(16px, 3vw, 42px) 35px;
+    }
+
+    .ad-slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 50px;
+      margin: 12px auto 25px;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .ad-slot.ad-300 { min-height: 250px; }
+
+    .ad-slot iframe,
+    .ad-slot img { max-width: 100%; }
+
+    .hero {
+      position: relative;
+      margin: 22px 0 27px;
+      padding: clamp(23px, 4vw, 43px);
+      overflow: hidden;
+      border: 1px solid #293954;
+      border-radius: 20px;
+      background:
+        radial-gradient(ellipse at 95% 0%, #285cb63b, transparent 43%),
+        linear-gradient(120deg, #151d2c, #11141d 68%);
+    }
+
+    .hero::after {
+      position: absolute;
+      top: -80px;
+      right: -45px;
+      width: 230px;
+      height: 230px;
+      border: 1px solid #ffffff0b;
+      border-radius: 50%;
+      box-shadow: 0 0 0 35px #ffffff04, 0 0 0 70px #ffffff03;
+      content: "";
+      pointer-events: none;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 13px;
+      color: #83adff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+
+    .hero-label::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4385ff;
+      box-shadow: 0 0 12px #4385ff;
+      content: "";
+    }
+
+    .hero h1 {
+      max-width: 650px;
+      margin: 0;
+      font-size: clamp(27px, 4vw, 43px);
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+    }
+
+    .hero p {
+      max-width: 520px;
+      margin: 13px 0 0;
+      color: #a7b0c1;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .chips {
+      display: flex;
+      gap: 9px;
+      padding: 0 0 21px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: #b7bfce;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .chip:hover {
+      border-color: #536c99;
+      color: white;
+    }
+
+    .chip.selected {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 8px 0 20px;
+    }
+
+    .section-heading h2,
+    .section-heading h1 {
+      margin: 0;
+      font-size: clamp(19px, 2vw, 24px);
+      font-weight: 750;
+      letter-spacing: -.5px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* Layout video */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 26px 19px;
+    }
+
+    .video-grid .video-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+
+    .video-grid .video-card:hover {
+      transform: translateY(-3px);
+      border-color: #3b5278;
+      box-shadow: 0 12px 30px #00000022;
+    }
+
+    .video-grid .video-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #202633;
+    }
+
+    .video-grid .video-card a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .video-grid .video-card h2,
+    .video-grid .video-card h3 {
+      display: -webkit-box;
+      margin: 12px 13px 6px;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.55;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .video-grid .video-card p {
+      margin: 0 13px 13px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* Metadata views bila tersedia dari app.js */
+    .video-grid .video-meta,
+    .video-grid .video-stats {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 13px 13px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .loading-state,
+    .error-state,
+    .diagnostic-state {
+      grid-column: 1 / -1;
+      padding: 35px 15px;
+      border: 1px dashed var(--border);
+      border-radius: 15px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .error-state button,
+    .diagnostic-state button {
+      margin-top: 10px;
+      padding: 10px 17px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--accent);
       color: white;
       cursor: pointer;
     }
 
-    #videoGrid .error-state p {
-      overflow-wrap: anywhere;
+    .error-state p { overflow-wrap: anywhere; }
+
+    .empty-state {
+      padding: 40px 15px;
+      border: 1px dashed var(--border);
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .empty-state.hidden { display: none; }
+
+    .empty-icon {
+      color: #789fe8;
+      font-size: 35px;
+    }
+
+    .empty-state h2 { font-size: 19px; }
+
+    .empty-state p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .primary-button {
+      padding: 11px 17px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: white;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .primary-button:hover { background: var(--accent-hover); }
+
+    .site-footer {
+      margin-top: 38px;
+      padding: 22px 0 5px;
+      border-top: 1px solid var(--border);
+      color: #727c8d;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (min-width: 1500px) {
+      .video-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 1150px) {
+      .video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sidebar { width: 205px; }
+      .main-content { margin-left: 205px; }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        min-height: 62px;
+        gap: 10px;
+        padding: 10px 13px;
+      }
+
+      .brand { gap: 7px; font-size: 18px; }
+      .brand-mark { width: 33px; height: 33px; }
+      .icon-button { width: 36px; height: 36px; }
+      .searchbar { height: 38px; }
+      .searchbar input { padding: 0 10px; font-size: 12px; }
+      .searchbar button { width: 35px; font-size: 20px; }
+      .admin-link { padding: 9px 10px; font-size: 12px; }
+      .admin-link span { display: none; }
+
+      .sidebar {
+        top: 62px;
+        width: 245px;
+        transform: translateX(-105%);
+        transition: transform .22s ease;
+        box-shadow: 15px 0 35px #00000030;
+      }
+
+      .sidebar.open { transform: translateX(0); }
+
+      body.sidebar-open::before {
+        position: fixed;
+        inset: 62px 0 0;
+        z-index: 70;
+        background: #0009;
+        content: "";
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 13px 14px 28px;
+      }
+
+      .hero { margin-top: 15px; border-radius: 16px; }
+      .hero h1 { letter-spacing: -.8px; }
+      .video-grid { gap: 17px 11px; }
+      .video-grid .video-card { border-radius: 12px; }
+      .video-grid .video-card h2,
+      .video-grid .video-card h3 {
+        margin: 9px 9px 5px;
+        font-size: 12px;
+      }
+
+      .video-grid .video-card p,
+      .video-grid .video-meta,
+      .video-grid .video-stats {
+        margin-right: 9px;
+        margin-left: 9px;
+        font-size: 10px;
+      }
+
+      .ad-slot { margin: 14px auto 20px; }
+    }
+
+    @media (max-width: 390px) {
+      .topbar { gap: 7px; padding-right: 9px; padding-left: 9px; }
+      .brand { font-size: 16px; }
+      .brand-mark { width: 29px; height: 29px; }
+      .icon-button { width: 32px; height: 34px; }
+      .video-grid { gap: 14px 9px; }
+      .hero { padding: 22px 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
-<script async type="application/javascript"
-src="https://a.magsrv.com/ad-provider.js"></script>
-<ins class="eas6a97888e29" data-zoneid="6065278"></ins>
-<script>
-  (AdProvider = window.AdProvider || []).push({"serve": {}});
-</script>
+
 <body>
-  <script src="https://wrenlull.com/5b/9e/98/5b9e989c46e4b6f3afbd30850fd66e78.js"></script>
+  <!-- Iklan tambahan -->
+  <script async src="https://a.magsrv.com/ad-provider.js"></script>
+  <ins class="eas6a97888e29" data-zoneid="6065278"></ins>
+  <script>
+    (window.AdProvider = window.AdProvider || []).push({ serve: {} });
+  </script>
+
   <header class="topbar">
     <button
       class="icon-button"
@@ -76,6 +597,7 @@ src="https://a.magsrv.com/ad-provider.js"></script>
       aria-expanded="false">
       <span class="hamburger">☰</span>
     </button>
+
     <a class="brand" href="index.html" aria-label="Video4u beranda">
       <span class="brand-mark">▶</span>
       <span>Video4u</span>
@@ -85,10 +607,10 @@ src="https://a.magsrv.com/ad-provider.js"></script>
       <input
         id="searchInput"
         type="search"
-        placeholder="Telusuri video"
+        placeholder="Cari video..."
         aria-label="Telusuri video"
         autocomplete="off">
-      <button aria-label="Cari" type="submit">⌕</button>
+      <button type="submit" aria-label="Cari">⌕</button>
     </form>
 
     <a class="admin-link" href="admin.html" title="Halaman admin">
@@ -111,15 +633,14 @@ src="https://a.magsrv.com/ad-provider.js"></script>
 
     <div class="sidebar-divider"></div>
 
-    <p class="sidebar-caption">Video4u</p>
+    <p class="sidebar-caption">Jelajahi</p>
     <p class="sidebar-note">
-      Temukan dan tonton video dari koleksi kami.
+      Temukan dan tonton koleksi video pilihanmu di Video4u.
     </p>
   </aside>
 
   <main class="main-content" id="mainContent">
-
-    <!-- IKLAN ATAS 320 x 50 -->
+    <!-- Iklan atas 320 x 50 -->
     <div class="ad-slot">
       <script>
         var atOptions = {
@@ -132,6 +653,15 @@ src="https://a.magsrv.com/ad-provider.js"></script>
       </script>
       <script src="https://wrenlull.com/b2f372f1490b8befb4745324cff509de/invoke.js"></script>
     </div>
+
+    <section class="hero">
+      <div class="hero-label">Selamat datang di Video4u</div>
+      <h1>Temukan video yang ingin kamu tonton.</h1>
+      <p>
+        Jelajahi koleksi video, gunakan pencarian untuk menemukan
+        favoritmu, dan nikmati pengalaman menonton yang lebih nyaman.
+      </p>
+    </section>
 
     <nav class="chips" aria-label="Kategori" id="categoryChips">
       <button
@@ -162,7 +692,7 @@ src="https://a.magsrv.com/ad-provider.js"></script>
       </button>
     </div>
 
-    <!-- IKLAN BAWAH 300 x 250 -->
+    <!-- Iklan bawah 300 x 250 -->
     <div class="ad-slot ad-300">
       <script>
         var atOptions = {
@@ -177,11 +707,47 @@ src="https://a.magsrv.com/ad-provider.js"></script>
     </div>
 
     <footer class="site-footer">
-      VideoKu · Dibuat dengan GitHub Pages
+      Video4u · Koleksi video dalam satu tempat
     </footer>
   </main>
 
-  <!-- Diagnosis jika app.js tidak berhasil berjalan -->
+  <!-- Menu mobile -->
+  <script>
+    (() => {
+      const toggle = document.getElementById("menuToggle");
+      const sidebar = document.getElementById("sidebar");
+
+      if (!toggle || !sidebar) return;
+
+      toggle.addEventListener("click", () => {
+        const open = sidebar.classList.toggle("open");
+        document.body.classList.toggle("sidebar-open", open);
+        toggle.setAttribute("aria-expanded", String(open));
+      });
+
+      document.addEventListener("click", event => {
+        if (
+          !sidebar.classList.contains("open") ||
+          sidebar.contains(event.target) ||
+          toggle.contains(event.target)
+        ) return;
+
+        sidebar.classList.remove("open");
+        document.body.classList.remove("sidebar-open");
+        toggle.setAttribute("aria-expanded", "false");
+      });
+
+      sidebar.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", () => {
+          sidebar.classList.remove("open");
+          document.body.classList.remove("sidebar-open");
+          toggle.setAttribute("aria-expanded", "false");
+        });
+      });
+    })();
+  </script>
+
+  <!-- Diagnosis jika app.js gagal berjalan -->
   <script>
     (() => {
       const grid = document.getElementById("videoGrid");
@@ -189,16 +755,12 @@ src="https://a.magsrv.com/ad-provider.js"></script>
 
       let appStarted = false;
 
-      // app.js dapat memberi tanda ketika berhasil dijalankan.
       window.addEventListener("videoku-app-started", () => {
         appStarted = true;
       });
 
-      // Jika app.js tidak berjalan, tampilkan penyebab yang bisa diperiksa.
       window.setTimeout(() => {
-        if (appStarted) return;
-
-        if (grid.querySelector(".video-card")) return;
+        if (appStarted || grid.querySelector(".video-card")) return;
 
         grid.innerHTML = `
           <div class="diagnostic-state">
@@ -211,36 +773,35 @@ src="https://a.magsrv.com/ad-provider.js"></script>
         `;
 
         document.getElementById("diagnosticRetry")
-          ?.addEventListener("click", () => {
-            window.location.reload();
-          });
+          ?.addEventListener("click", () => window.location.reload());
       }, 10000);
     })();
   </script>
+
+  <!-- Histats -->
+  <script>
+    var _Hasync = window._Hasync || [];
+    _Hasync.push(['Histats.start', '1,5050971,4,0,0,0,00010000']);
+    _Hasync.push(['Histats.fasi', '1']);
+    _Hasync.push(['Histats.track_hits', '']);
+
+    (function() {
+      var hs = document.createElement('script');
+      hs.type = 'text/javascript';
+      hs.async = true;
+      hs.src = 'https://s10.histats.com/js15_as.js';
+      document.body.appendChild(hs);
+    })();
+  </script>
+
+  <noscript>
+    <a href="/" target="_blank" rel="noopener">
+      <img
+        src="https://sstatic1.histats.com/0.gif?5050971&101"
+        alt=""
+        width="1"
+        height="1">
+    </a>
+  </noscript>
 </body>
-  </html>
-  
-<!-- Histats.com START (async) -->
-<script type="text/javascript">
-var _Hasync = _Hasync || [];
-_Hasync.push(['Histats.start', '1,5050971,4,0,0,0,00010000']);
-_Hasync.push(['Histats.fasi', '1']);
-_Hasync.push(['Histats.track_hits', '']);
-
-(function() {
-  var hs = document.createElement('script');
-  hs.type = 'text/javascript';
-  hs.async = true;
-  hs.src = ('//s10.histats.com/js15_as.js');
-  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
-})();
-</script>
-
-<noscript>
-  <a href="/" target="_blank">
-    <img src="//sstatic1.histats.com/0.gif?5050971&101"
-         alt=""
-         border="0">
-  </a>
-</noscript>
-<!-- Histats.com END -->
+</html>
